@@ -107,10 +107,11 @@
     async function cargarDatos() {
         const select = document.getElementById("materialSelect");
         select.innerHTML = "<option>Cargando...</option>";
+        const localRaw = "https://raw.githubusercontent.com/Pablocdv/Cotizador/gh-pages/materials.csv";
         const proxyRaw = "https://api.allorigins.win/raw?url=" + encodeURIComponent(urlCSV);
         const proxyThing = "https://thingproxy.freeboard.io/fetch/" + urlCSV;
         const proxyJina = "https://r.jina.ai/http/" + urlCSV;
-        const proxies = [proxyRaw, proxyThing, proxyJina, urlCSV];
+        const proxies = [localRaw, proxyRaw, proxyThing, proxyJina, urlCSV];
         let text = null;
         for (const p of proxies) {
             try { const res = await fetch(p); if (!res.ok) throw new Error('status ' + res.status); text = await res.text(); break; } catch (e) {}

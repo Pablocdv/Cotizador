@@ -114,10 +114,11 @@
         select.innerHTML = "<option>Cargando...</option>";
 
         // Intentamos usar AllOrigins/raw para evitar problemas CORS
+        const localRaw = "https://raw.githubusercontent.com/Pablocdv/Cotizador/gh-pages/materials.csv";
         const proxyRaw = "https://api.allorigins.win/raw?url=" + encodeURIComponent(urlCSV);
         const proxyThing = "https://thingproxy.freeboard.io/fetch/" + urlCSV;
         const proxyJina = "https://r.jina.ai/http/" + urlCSV;
-        const proxies = [proxyRaw, proxyThing, proxyJina, urlCSV];
+        const proxies = [localRaw, proxyRaw, proxyThing, proxyJina, urlCSV];
 
         let text = null;
         for (const p of proxies) {
