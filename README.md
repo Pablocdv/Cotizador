@@ -47,3 +47,5 @@ git push -u origin main
 
 ---
 Archivo: `cotizador.html`
+
+_Última modificación: 2026-02-03 (actualización para despliegue automático)_
