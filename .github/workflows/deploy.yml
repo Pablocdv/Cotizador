@@ -1,28 +1,36 @@
-name: Deploy Pages
+name: Deploy to gh-pages (no external actions)
 
 on:
   push:
     branches: [ main ]
 
 permissions:
-  contents: read
-  pages: write
-  id-token: write
+  contents: write
 
 jobs:
   deploy:
     runs-on: ubuntu-latest
     steps:
-      - name: Checkout
+      - name: Checkout repository
         uses: actions/checkout@v4
 
-      - name: Set up Pages
-        uses: actions/setup-pages@v3
+      - name: Build deployment tree
+        run: |
+          mkdir out || true
+          rsync -a --delete --exclude='.git' --exclude='.github' --exclude:'runpage.html' ./ out/
+          # ensure index exists
+          if [ ! -f out/index.html ] && [ -f out/cotizador.html ]; then cp out/cotizador.html out/index.html; fi
 
-      - name: Upload Pages artifact
-        uses: actions/upload-pages-artifact@v1
-        with:
-          path: '.'
-
-      - name: Deploy to GitHub Pages
-        uses: actions/deploy-pages@v1
+      - name: Publish to gh-pages
+        env:
+          REPO: ${{ github.repository }}
+          TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          cd out
+          git init
+          git checkout -b gh-pages
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add -A
+          git commit -m "Deploy site from $GITHUB_SHA" || true
+          git push -f "https://x-access-token:${TOKEN}@github.com/${REPO}.git" gh-pages:gh-pages
