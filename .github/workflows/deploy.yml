@@ -10,22 +10,19 @@ permissions:
   id-token: write
 
 jobs:
-  build-and-deploy:
+  deploy:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
         uses: actions/checkout@v4
+
+      - name: Set up Pages
+        uses: actions/setup-pages@v3
 
       - name: Upload Pages artifact
         uses: actions/upload-pages-artifact@v1
         with:
           path: '.'
 
-  deploy:
-    needs: build-and-deploy
-    runs-on: ubuntu-latest
-    permissions:
-      pages: write
-    steps:
       - name: Deploy to GitHub Pages
         uses: actions/deploy-pages@v1
