@@ -4,49 +4,75 @@
     <meta charset="UTF-8">
     <title>Cotizador de Carteles - FIX LOCAL</title>
     <style>
-        body { font-family: sans-serif; background: #f0f2f5; display: flex; justify-content: center; padding: 20px; }
-        .card { background: white; padding: 25px; border-radius: 15px; box-shadow: 0 10px 25px rgba(0,0,0,0.2); width: 100%; max-width: 400px; }
-        h2 { color: #1a73e8; text-align: center; margin-top: 0; }
-        .config-panel { background: #fff3cd; padding: 10px; border-radius: 8px; margin-bottom: 15px; font-size: 12px; border: 1px solid #ffeeba; }
-        label { display: block; margin: 10px 0 5px; font-weight: bold; }
-        select, input { width: 100%; padding: 12px; margin-bottom: 10px; border: 1px solid #ccc; border-radius: 8px; box-sizing: border-box; font-size: 16px; }
-        .result { background: #e8f0fe; padding: 20px; border-radius: 10px; text-align: center; border: 2px solid #1a73e8; margin: 15px 0; }
-        .price { font-size: 32px; font-weight: bold; color: #1a73e8; }
-        .btn-sync { background: #1a73e8; color: white; border: none; padding: 10px; border-radius: 5px; cursor: pointer; width: 100%; margin-bottom: 10px; }
-        .btn-ws { background: #25d366; color: white; border: none; padding: 15px; border-radius: 8px; width: 100%; font-weight: bold; cursor: pointer; font-size: 16px; }
+        :root{--yellow:#ffd400;--black:#111;--plate:#f7f7f7}
+        body { font-family: Inter, system-ui, -apple-system, Roboto, 'Helvetica Neue', Arial; background: var(--plate); display: flex; justify-content: center; padding: 24px; }
+        .card { background: white; padding: 18px; border-radius: 12px; box-shadow: 0 8px 20px rgba(0,0,0,0.14); width: 100%; max-width: 980px; }
+        .sign-header{ background: repeating-linear-gradient(45deg, var(--yellow) 0 12px, var(--black) 12px 24px); color: var(--black); padding: 10px 16px; border-radius: 8px; display:flex; align-items:center; gap:12px; margin-bottom:14px }
+        .sign-title{ font-weight:800; font-size:20px; color:#111; text-transform:uppercase; letter-spacing:1px }
+        .config-panel { background: rgba(0,0,0,0.04); padding: 10px; border-radius: 8px; margin-bottom: 12px; font-size: 13px; border: 1px solid rgba(0,0,0,0.06); }
+        label { display: block; margin: 8px 0 6px; font-weight: 700; font-size:13px }
+        select, input { width: 100%; padding: 10px; margin-bottom: 10px; border: 1px solid #ddd; border-radius: 8px; box-sizing: border-box; font-size: 15px; }
+        .controls { display:flex; gap:12px; align-items:flex-start }
+        .left { flex: 1; }
+        .right { width: 420px; }
+        .result { background: linear-gradient(180deg,#fff 0,#fff); padding: 18px; border-radius: 10px; text-align: center; border: 2px solid rgba(0,0,0,0.06); margin: 12px 0; }
+        .price { font-size: 30px; font-weight: 800; color: var(--black); }
+        .btn-sync { background: var(--black); color: var(--yellow); border: none; padding: 10px; border-radius: 6px; cursor: pointer; width: 100%; margin-bottom: 10px; font-weight:700 }
+        .btn-ws { background: var(--yellow); color: var(--black); border: none; padding: 12px; border-radius: 8px; width: 100%; font-weight: 800; cursor: pointer; font-size: 15px; box-shadow: 0 6px 18px rgba(0,0,0,0.08) }
+        table.precios{ width:100%; border-collapse: collapse; margin-top: 10px }
+        table.precios th{ background: var(--black); color: var(--yellow); padding:10px; text-align:left; font-weight:800 }
+        table.precios td{ padding:10px; border-bottom:1px dashed #eee }
+        table.precios tr:nth-child(even) td{ background: #fffdfa }
+        .small { font-size:12px; color:#666 }
     </style>
 </head>
 <body>
 
 <div class="card">
-    <h2>Cotizador Pro</h2>
-    
-    <div class="config-panel">
-        <strong>⚠️ Si no carga automático:</strong><br>
-        1. Haz clic en el botón azul de abajo.<br>
-        2. Si falla, es bloqueo de tu PC.
-        <button class="btn-sync" onclick="cargarDatos()">🔄 FORZAR CARGA DE PRECIOS</button>
+    <div class="sign-header">
+        <div class="sign-title">COTIZADOR - Señalización Vial</div>
+        <div class="small">Carga desde el CSV público y muestra todos los AUT/Precios</div>
     </div>
 
-    <label>Dólar ($)</label>
-    <input type="number" id="dolar" value="1550" oninput="calcular()">
+    <div class="controls">
+        <div class="left">
+            <div class="config-panel">
+                <strong>⚠️ Si no carga automático:</strong><br>
+                1. Haz clic en el botón negro de abajo.<br>
+                2. Si falla, puede ser bloqueo CORS.
+                <button class="btn-sync" onclick="cargarDatos()">🔄 FORZAR CARGA DE PRECIOS</button>
+            </div>
 
-    <label>Material</label>
-    <select id="materialSelect" onchange="calcular()">
-        <option>Esperando carga...</option>
-    </select>
+            <label>Dólar ($)</label>
+            <input type="number" id="dolar" value="1550" oninput="actualizarTabla()">
 
-    <div style="display:flex; gap:10px;">
-        <input type="number" id="ancho" placeholder="Ancho cm" oninput="calcular()">
-        <input type="number" id="alto" placeholder="Alto cm" oninput="calcular()">
+            <label>Material (selección rápida)</label>
+            <select id="materialSelect" onchange="calcular()">
+                <option>Esperando carga...</option>
+            </select>
+
+            <div style="display:flex; gap:10px;">
+                <input type="number" id="ancho" placeholder="Ancho cm" oninput="calcular()">
+                <input type="number" id="alto" placeholder="Alto cm" oninput="calcular()">
+            </div>
+
+            <div class="result">
+                <div id="matNombre" style="font-weight:bold">-</div>
+                <div class="price" id="precioFinal">$ 0,00</div>
+            </div>
+
+            <button class="btn-ws" onclick="enviarWS()">Enviar WhatsApp</button>
+        </div>
+
+        <div class="right">
+            <label>Lista de AUT y Precios</label>
+            <div class="small">Se muestran todos los pares `AUT` + precio (USD) encontrados en el CSV.</div>
+            <table class="precios" id="preciosTable">
+                <thead><tr><th>AUT</th><th>Precio (USD)</th><th>Precio (ARS)</th></tr></thead>
+                <tbody><tr><td colspan="3" class="small">Cargando...</td></tr></tbody>
+            </table>
+        </div>
     </div>
-
-    <div class="result">
-        <div id="matNombre" style="font-weight:bold">-</div>
-        <div class="price" id="precioFinal">$ 0,00</div>
-    </div>
-
-    <button class="btn-ws" onclick="enviarWS()">Enviar WhatsApp</button>
 </div>
 
 <script>
@@ -55,7 +81,7 @@
     // Parser CSV simple pero que maneja comillas y comas internas
     function parseCSV(text) {
         const rows = [];
-        const re = /(?:\s*\n|\r\n|\n|\r|^)(?:"((?:[^"]|"")*)"|([^",\r\n]*))(?:,|$)/g;
+        const re = /(?:\s*\n|\r\n|\n|\r|^)(?:"((?:[^"]|"" )*)"|([^",\r\n]*))(?:,|$)/g;
         let row = [];
         let match;
         let idx = 0;
@@ -64,13 +90,8 @@
             const unquoted = match[2];
             const val = quoted !== undefined ? quoted.replace(/""/g, '"') : (unquoted || '');
             row.push(val);
-            // If the match ended with a newline, push row and reset
             const nextChar = text[re.lastIndex - 1];
-            if (nextChar === '\n' || nextChar === '\r') {
-                rows.push(row);
-                row = [];
-            }
-            // safety to avoid infinite loop
+            if (nextChar === '\n' || nextChar === '\r') { rows.push(row); row = []; }
             if (++idx > 1000000) break;
         }
         if (row.length) rows.push(row);
@@ -80,77 +101,37 @@
     async function cargarDatos() {
         const select = document.getElementById("materialSelect");
         select.innerHTML = "<option>Cargando...</option>";
-
-        // Intentamos usar AllOrigins/raw para evitar problemas CORS
         const proxyRaw = "https://api.allorigins.win/raw?url=" + encodeURIComponent(urlCSV);
         const proxies = [proxyRaw, urlCSV];
-
         let text = null;
         for (const p of proxies) {
-            try {
-                const res = await fetch(p);
-                if (!res.ok) throw new Error('status ' + res.status);
-                text = await res.text();
-                break;
-            } catch (e) {
-                // sigue al siguiente proxy
-            }
+            try { const res = await fetch(p); if (!res.ok) throw new Error('status ' + res.status); text = await res.text(); break; } catch (e) {}
         }
-
-        if (!text) {
-            select.innerHTML = "<option>Error al cargar</option>";
-            alert("❌ No fue posible cargar el CSV desde Google (CORS o bloqueo).\n\nSugerencia: publica este archivo en GitHub Pages y usa la URL https://TU_USUARIO.github.io/TU_REPO/cotizador.html");
-            return;
-        }
+        if (!text) { select.innerHTML = "<option>Error al cargar</option>"; alert("❌ No fue posible cargar el CSV desde Google (CORS o bloqueo).\n\nSugerencia: publica este archivo en GitHub Pages y usa la URL https://TU_USUARIO.github.io/TU_REPO/cotizador.html"); return; }
 
         const filas = parseCSV(text);
-        // Si la hoja tiene encabezados y filas de info, buscar columnas por índice seguro
-        // Intentamos leer nombre en columna 7 y precio en columna 11 (base anterior). Si no, tomamos columnas 0 y 1.
-        const materiales = [];
-        for (let i = 6; i < filas.length; i++) {
-            const f = filas[i];
-            if (!f) continue;
-            const nombre = (f[6] || f[0] || "").trim();
-            const precio = parseFloat((f[10] || f[1] || "0").replace(/[^0-9\.,-]/g, '').replace(',', '.')) || 0;
-            if (nombre && precio > 0) materiales.push({ nombre, precioPesos: precio });
+        const headers = (filas[0] || []).map(h => (h||'').toString().trim());
+        const pairs = [];
+        for (let i = 0; i < headers.length; i++) if (/aut/i.test(headers[i])) pairs.push({ autIndex: i, priceIndex: i+1 });
+        const preciosList = [];
+        if (pairs.length === 0) {
+            for (let r = 6; r < filas.length; r++) { const f = filas[r]; if (!f) continue; const nombre = (f[6] || f[0] || '').trim(); const precio = parseFloat((f[10] || f[1] || '0').toString().replace(/[^0-9\.,-]/g,'').replace(',', '.')) || 0; if (nombre && precio>0) preciosList.push({ aut: nombre, priceUSD: precio }); }
+        } else {
+            for (let r = 1; r < filas.length; r++) { const row = filas[r]; if (!row) continue; for (const p of pairs) { const aut = (row[p.autIndex]||'').toString().trim(); let priceUSD = 0; if (row[p.priceIndex]!==undefined) priceUSD = parseFloat(row[p.priceIndex].toString().replace(/[^0-9\.,-]/g,'').replace(',', '.')) || 0; if (aut && priceUSD>0) preciosList.push({aut, priceUSD}); } }
         }
+        if (preciosList.length === 0) { select.innerHTML = "<option>No se encontraron materiales</option>"; alert('⚠️ No se encontraron pares AUT+Precio en el CSV.'); return; }
 
-        if (materiales.length === 0) {
-            select.innerHTML = "<option>No se encontraron materiales</option>";
-            alert('⚠️ No se encontraron materiales válidos en el CSV.');
-            return;
-        }
-
-        select.innerHTML = "";
-        materiales.forEach(m => {
-            let opt = document.createElement("option");
-            opt.value = m.precioPesos;
-            opt.textContent = m.nombre;
-            select.appendChild(opt);
-        });
-        calcular();
+        const tbody = document.querySelector('#preciosTable tbody'); tbody.innerHTML=''; const firstByAut = new Map(); preciosList.forEach(item=>{ const tr=document.createElement('tr'); const tdAut=document.createElement('td'); tdAut.textContent=item.aut; tr.appendChild(tdAut); const tdUsd=document.createElement('td'); tdUsd.textContent=Number(item.priceUSD).toLocaleString('en-US',{minimumFractionDigits:2}); tr.appendChild(tdUsd); const tdArs=document.createElement('td'); tdArs.textContent='—'; tdArs.dataset.usd=item.priceUSD; tr.appendChild(tdArs); tbody.appendChild(tr); if (!firstByAut.has(item.aut)) firstByAut.set(item.aut,item.priceUSD); });
+        select.innerHTML=''; firstByAut.forEach((price,aut)=>{ const opt=document.createElement('option'); opt.value=price; opt.textContent=aut; select.appendChild(opt); });
+        actualizarTabla(); calcular();
     }
 
-    function calcular() {
-        const d = parseFloat(document.getElementById("dolar").value) || 0;
-        const v = parseFloat(document.getElementById("materialSelect").value) || 0;
-        const anc = parseFloat(document.getElementById("ancho").value) || 0;
-        const alt = parseFloat(document.getElementById("alto").value) || 0;
-        
-        // Ajuste proporcional si cambias el dólar manual respecto al del Excel (1550)
-        const total = (anc/100) * (alt/100) * v * (d/1550);
-        
-        document.getElementById("precioFinal").textContent = "$ " + total.toLocaleString('es-AR', {minimumFractionDigits:2});
-        const s = document.getElementById("materialSelect");
-        document.getElementById("matNombre").textContent = s.options[s.selectedIndex].text;
-    }
+    function actualizarTabla(){ const dolar=parseFloat(document.getElementById('dolar').value)||0; const rows=document.querySelectorAll('#preciosTable tbody tr'); rows.forEach(r=>{ const tdArs=r.children[2]; const usd=parseFloat(tdArs.dataset.usd||tdArs.textContent.replace(/[^0-9\.,-]/g,'').replace(',','.'))||0; const ars=usd*dolar; tdArs.textContent=ars?('$ '+ars.toLocaleString('es-AR',{minimumFractionDigits:2})):'—'; }); }
 
-    function enviarWS() {
-        const msj = `*Presupuesto*%0A*Material:* ${document.getElementById("matNombre").textContent}%0A*Medidas:* ${document.getElementById("ancho").value}x${document.getElementById("alto").value}cm%0A*Total:* ${document.getElementById("precioFinal").textContent}`;
-        window.open(`https://wa.me/?text=${msj}`);
-    }
+    function calcular(){ const dolar=parseFloat(document.getElementById('dolar').value)||0; const priceUSD=parseFloat(document.getElementById('materialSelect').value)||0; const anc=parseFloat(document.getElementById('ancho').value)||0; const alt=parseFloat(document.getElementById('alto').value)||0; const area=(anc>0&&alt>0)?((anc/100)*(alt/100)):1; const totalARS=priceUSD*dolar*area; document.getElementById('precioFinal').textContent='$ '+totalARS.toLocaleString('es-AR',{minimumFractionDigits:2}); const s=document.getElementById('materialSelect'); document.getElementById('matNombre').textContent=s.options[s.selectedIndex]?s.options[s.selectedIndex].text:'-'; }
 
-    // Intentar carga inicial
+    function enviarWS(){ const material=document.getElementById('matNombre').textContent; const ancho=document.getElementById('ancho').value||'-'; const alto=document.getElementById('alto').value||'-'; const total=document.getElementById('precioFinal').textContent; const msj=`*Presupuesto*%0A*Material:* ${material}%0A*Medidas:* ${ancho}x${alto} cm%0A*Total:* ${total}`; window.open(`https://wa.me/?text=${msj}`); }
+
     window.onload = cargarDatos;
 </script>
 </body>
