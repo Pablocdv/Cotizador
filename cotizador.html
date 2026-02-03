@@ -1,0 +1,109 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <title>Cotizador de Carteles - FIX LOCAL</title>
+    <style>
+        body { font-family: sans-serif; background: #f0f2f5; display: flex; justify-content: center; padding: 20px; }
+        .card { background: white; padding: 25px; border-radius: 15px; box-shadow: 0 10px 25px rgba(0,0,0,0.2); width: 100%; max-width: 400px; }
+        h2 { color: #1a73e8; text-align: center; margin-top: 0; }
+        .config-panel { background: #fff3cd; padding: 10px; border-radius: 8px; margin-bottom: 15px; font-size: 12px; border: 1px solid #ffeeba; }
+        label { display: block; margin: 10px 0 5px; font-weight: bold; }
+        select, input { width: 100%; padding: 12px; margin-bottom: 10px; border: 1px solid #ccc; border-radius: 8px; box-sizing: border-box; font-size: 16px; }
+        .result { background: #e8f0fe; padding: 20px; border-radius: 10px; text-align: center; border: 2px solid #1a73e8; margin: 15px 0; }
+        .price { font-size: 32px; font-weight: bold; color: #1a73e8; }
+        .btn-sync { background: #1a73e8; color: white; border: none; padding: 10px; border-radius: 5px; cursor: pointer; width: 100%; margin-bottom: 10px; }
+        .btn-ws { background: #25d366; color: white; border: none; padding: 15px; border-radius: 8px; width: 100%; font-weight: bold; cursor: pointer; font-size: 16px; }
+    </style>
+</head>
+<body>
+
+<div class="card">
+    <h2>Cotizador Pro</h2>
+    
+    <div class="config-panel">
+        <strong>⚠️ Si no carga automático:</strong><br>
+        1. Haz clic en el botón azul de abajo.<br>
+        2. Si falla, es bloqueo de tu PC.
+        <button class="btn-sync" onclick="cargarDatos()">🔄 FORZAR CARGA DE PRECIOS</button>
+    </div>
+
+    <label>Dólar ($)</label>
+    <input type="number" id="dolar" value="1550" oninput="calcular()">
+
+    <label>Material</label>
+    <select id="materialSelect" onchange="calcular()">
+        <option>Esperando carga...</option>
+    </select>
+
+    <div style="display:flex; gap:10px;">
+        <input type="number" id="ancho" placeholder="Ancho cm" oninput="calcular()">
+        <input type="number" id="alto" placeholder="Alto cm" oninput="calcular()">
+    </div>
+
+    <div class="result">
+        <div id="matNombre" style="font-weight:bold">-</div>
+        <div class="price" id="precioFinal">$ 0,00</div>
+    </div>
+
+    <button class="btn-ws" onclick="enviarWS()">Enviar WhatsApp</button>
+</div>
+
+<script>
+    const urlCSV = "https://docs.google.com/spreadsheets/d/e/2PACX-1vQOf98asUFDCGY2gRpbbMmB3KQyWbZbZcDv7FAhxp5lTvvRuZegS9AdhnwKNVRBldvHPsCEgecllMyT/pub?gid=0&single=true&output=csv";
+
+    async function cargarDatos() {
+        const select = document.getElementById("materialSelect");
+        select.innerHTML = "<option>Cargando...</option>";
+        
+        try {
+            // Usamos un servicio "CORS Anywhere" público para saltar el bloqueo de tu PC
+            const proxy = "https://api.allorigins.win/get?url=" + encodeURIComponent(urlCSV);
+            const res = await fetch(proxy);
+            const json = await res.json();
+            const data = json.contents;
+            
+            const filas = data.split(/\r?\n/);
+            const materiales = filas.slice(6).map(f => {
+                const c = f.split(",");
+                return { nombre: (c[6] || "").trim(), precioPesos: parseFloat(c[10]) || 0 };
+            }).filter(m => m.nombre !== "" && m.precioPesos > 0);
+
+            select.innerHTML = "";
+            materiales.forEach(m => {
+                let opt = document.createElement("option");
+                opt.value = m.precioPesos;
+                opt.textContent = m.nombre;
+                select.appendChild(opt);
+            });
+            alert("✅ ¡Base de datos cargada con éxito!");
+            calcular();
+        } catch (e) {
+            alert("❌ Error de bloqueo. Tu PC no permite conectar con Google. \n\nSOLUCIÓN: Sube el archivo a GitHub Pages (es gratis) o usa la extensión 'Allow CORS' en Chrome.");
+        }
+    }
+
+    function calcular() {
+        const d = parseFloat(document.getElementById("dolar").value) || 0;
+        const v = parseFloat(document.getElementById("materialSelect").value) || 0;
+        const anc = parseFloat(document.getElementById("ancho").value) || 0;
+        const alt = parseFloat(document.getElementById("alto").value) || 0;
+        
+        // Ajuste proporcional si cambias el dólar manual respecto al del Excel (1550)
+        const total = (anc/100) * (alt/100) * v * (d/1550);
+        
+        document.getElementById("precioFinal").textContent = "$ " + total.toLocaleString('es-AR', {minimumFractionDigits:2});
+        const s = document.getElementById("materialSelect");
+        document.getElementById("matNombre").textContent = s.options[s.selectedIndex].text;
+    }
+
+    function enviarWS() {
+        const msj = `*Presupuesto*%0A*Material:* ${document.getElementById("matNombre").textContent}%0A*Medidas:* ${document.getElementById("ancho").value}x${document.getElementById("alto").value}cm%0A*Total:* ${document.getElementById("precioFinal").textContent}`;
+        window.open(`https://wa.me/?text=${msj}`);
+    }
+
+    // Intentar carga inicial
+    window.onload = cargarDatos;
+</script>
+</body>
+</html>
