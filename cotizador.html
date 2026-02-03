@@ -41,6 +41,12 @@
                 1. Haz clic en el botón negro de abajo.<br>
                 2. Si falla, puede ser bloqueo CORS.
                 <button class="btn-sync" onclick="cargarDatos()">🔄 FORZAR CARGA DE PRECIOS</button>
+                <div id="manualArea" style="margin-top:10px; display:none">
+                    <div class="small">Si la carga remota falla, pega aquí el contenido CSV o sube el archivo:</div>
+                    <textarea id="csvPaste" style="width:100%;height:80px;margin-top:6px;border-radius:6px;padding:8px;border:1px solid #ddd" placeholder="Pega aquí el CSV... (Ctrl+V)"></textarea>
+                    <input type="file" id="csvFile" accept=".csv,text/csv" style="margin-top:8px">
+                    <button class="btn-sync" onclick="loadFromPaste()" style="margin-top:8px;background:#444;color:var(--yellow)">Cargar desde texto</button>
+                </div>
             </div>
 
             <label>Dólar ($)</label>
@@ -109,7 +115,9 @@
 
         // Intentamos usar AllOrigins/raw para evitar problemas CORS
         const proxyRaw = "https://api.allorigins.win/raw?url=" + encodeURIComponent(urlCSV);
-        const proxies = [proxyRaw, urlCSV];
+        const proxyThing = "https://thingproxy.freeboard.io/fetch/" + urlCSV;
+        const proxyJina = "https://r.jina.ai/http/" + urlCSV;
+        const proxies = [proxyRaw, proxyThing, proxyJina, urlCSV];
 
         let text = null;
         for (const p of proxies) {
@@ -125,7 +133,8 @@
 
         if (!text) {
             select.innerHTML = "<option>Error al cargar</option>";
-            alert("❌ No fue posible cargar el CSV desde Google (CORS o bloqueo).\n\nSugerencia: publica este archivo en GitHub Pages y usa la URL https://TU_USUARIO.github.io/TU_REPO/cotizador.html");
+            // Mostrar zona manual para pegar/subir CSV
+            document.getElementById('manualArea').style.display = 'block';
             return;
         }
 
@@ -234,6 +243,46 @@
 
     // Intentar carga inicial
     window.onload = cargarDatos;
+
+    // Carga desde texto pegado o archivo
+    function loadFromPaste() {
+        const txt = document.getElementById('csvPaste').value;
+        if (!txt || txt.trim().length === 0) { alert('Pega el CSV en el cuadro antes de cargar.'); return; }
+        loadFromText(txt);
+    }
+
+    document.getElementById('csvFile')?.addEventListener('change', function(e){
+        const f = e.target.files && e.target.files[0];
+        if (!f) return;
+        const r = new FileReader();
+        r.onload = function(){ loadFromText(r.result); }
+        r.readAsText(f,'UTF-8');
+    });
+
+    function loadFromText(text) {
+        try {
+            const filas = parseCSV(text);
+            // usar la misma lógica que cargarDatos para poblar
+            // reutilizamos partes: construimos headers/pairs y preciosList
+            const headers = (filas[0] || []).map(h => (h||'').toString().trim());
+            const pairs = [];
+            for (let i = 0; i < headers.length; i++) if (/aut/i.test(headers[i])) pairs.push({ autIndex: i, priceIndex: i+1 });
+            const preciosList = [];
+            if (pairs.length === 0) {
+                for (let r = 6; r < filas.length; r++) { const f = filas[r]; if (!f) continue; const nombre = (f[6] || f[0] || '').trim(); const precio = parseFloat((f[10] || f[1] || '0').toString().replace(/[^0-9\.,-]/g,'').replace(',', '.')) || 0; if (nombre && precio>0) preciosList.push({ aut: nombre, priceUSD: precio }); }
+            } else {
+                for (let r = 1; r < filas.length; r++) { const row = filas[r]; if (!row) continue; for (const p of pairs) { const aut = (row[p.autIndex]||'').toString().trim(); let priceUSD = 0; if (row[p.priceIndex]!==undefined) priceUSD = parseFloat(row[p.priceIndex].toString().replace(/[^0-9\.,-]/g,'').replace(',', '.')) || 0; if (aut && priceUSD>0) preciosList.push({aut, priceUSD}); } }
+            }
+
+            if (preciosList.length === 0) { alert('No se encontraron pares AUT+Precio en el CSV pegado.'); return; }
+
+            const select = document.getElementById('materialSelect');
+            const tbody = document.querySelector('#preciosTable tbody'); tbody.innerHTML=''; const firstByAut = new Map(); preciosList.forEach(item=>{ const tr=document.createElement('tr'); const tdAut=document.createElement('td'); tdAut.textContent=item.aut; tr.appendChild(tdAut); const tdUsd=document.createElement('td'); tdUsd.textContent=Number(item.priceUSD).toLocaleString('en-US',{minimumFractionDigits:2}); tr.appendChild(tdUsd); const tdArs=document.createElement('td'); tdArs.textContent='—'; tdArs.dataset.usd=item.priceUSD; tr.appendChild(tdArs); tbody.appendChild(tr); if (!firstByAut.has(item.aut)) firstByAut.set(item.aut,item.priceUSD); });
+            select.innerHTML=''; firstByAut.forEach((price,aut)=>{ const opt=document.createElement('option'); opt.value=price; opt.textContent=aut; select.appendChild(opt); });
+            actualizarTabla(); calcular();
+            document.getElementById('manualArea').style.display = 'none';
+        } catch (e) { alert('Error procesando CSV: '+e.message); }
+    }
 </script>
 </body>
 </html>
